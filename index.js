@@ -9,7 +9,7 @@ const { DataTypes, Sequelize } = require("sequelize");
 const sequelize = new Sequelize({
     host: "127.0.0.1",
     username: "root",
-    password: "123456",
+    password: "111111",
     database: "g",
     dialect: 'mysql',
 });
@@ -97,7 +97,7 @@ app.use(json())
 
 
 router.get('/users', async (ctx, next) => {
-    ctx.body = await User.findAll();
+    ctx.body = { code: 200, data: await User.findAll()}
     return next()
 })
 
@@ -116,7 +116,7 @@ router.post('/users', async (ctx, next) => {
 
 
 router.get('/results', async(ctx, next) =>{
-    ctx.body = await Result.findAll()
+    ctx.body = { code: 200, data:await Result.findAll()}
     return next()
 })
 
@@ -137,6 +137,15 @@ router.post('/results', async (ctx, next) => {
         if (!body.team2 || body.team2.length === 0){
             ctx.body = { code: 401, data:`team2 null`}
         }
+        if (body.team1.indexOf(body.captain1_uid) == -1)
+            body.team1.push(body.captain1_uid)
+        if (body.team2.indexOf(body.captain2_uid)== -1)
+            body.team2.push(body.captain2_uid)
+
+        console.log("body.team1", body.team1)
+        console.log("body.team2", body.team2)
+        //todo: captain1_uid 是否在team1中
+        //todo: 第一sql插入成功后，第二局sql失败
         for (const user of body.team1) {
             records.push({
                 uid: user,
@@ -160,6 +169,41 @@ router.post('/results', async (ctx, next) => {
     }
     else
         ctx.body = { code: 401, data:`dulicate`}
+    return next()
+})
+
+
+router.get('/winningRates', async(ctx, next) =>{
+    const uid = ctx.query.uid
+
+    console.log("uid  ", uid)
+
+    let res = await Team.findAll({where: {uid}})
+    console.log("res", res)
+
+    let gameAttend = res.length
+
+    let winGames  = 0, loseGames  = 0, drawGames = 0
+    for (const game of res){
+        if (game.result === 1)
+            winGames ++
+        else if (game.result === 2)
+            loseGames ++
+        else if (game.result === 3)
+            drawGames ++
+        else 
+            console.error(" error: ", uid, ":  ", game.result)
+    } 
+
+    ctx.body = { code: 200, data: {
+        uid,
+        gameAttend,
+        winGames,
+        loseGames,
+        drawGames,
+        winningRate: winGames/gameAttend
+
+    }}
     return next()
 })
 
