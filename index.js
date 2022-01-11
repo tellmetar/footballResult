@@ -5,6 +5,7 @@ const json = require('koa-json')
 let Router = require('koa-better-router')
 let router = Router().loadMethods()
 const { DataTypes, Sequelize } = require("sequelize");
+const { accessLogger } = require('./logger/index')
 
 const sequelize = new Sequelize({
     host: "127.0.0.1",
@@ -94,6 +95,7 @@ const Team = sequelize.define('Team', {
 
 app.use(koaBody());
 app.use(json())
+app.use(accessLogger())
 
 
 router.get('/users', async (ctx, next) => {
