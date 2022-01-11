@@ -47,6 +47,11 @@ app.use(async (ctx, next) => {
     //https://www.rails365.net/articles/cors-jin-jie-expose-headers-wu
     ctx.set("Access-Control-Expose-Headers", "myData");
     
+    console.log("ctx. method", ctx.method)
+    if (ctx.method = "OPTIONS")
+        ctx.status = 200
+
+    
     await next();
 })
 
@@ -54,7 +59,7 @@ app.use(async (ctx, next) => {
 const sequelize = new Sequelize({
     host: "127.0.0.1",
     username: "root",
-    password: "111111",
+    password: "",
     database: "g",
     dialect: 'mysql',
 });
