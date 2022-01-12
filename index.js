@@ -45,7 +45,7 @@ app.use(async (ctx, next) => {
     // 需要获取其他字段时，使用Access-Control-Expose-Headers，
     // getResponseHeader('myData')可以返回我们所需的值
     //https://www.rails365.net/articles/cors-jin-jie-expose-headers-wu
-    ctx.set("Access-Control-Expose-Headers", "myData");
+    // ctx.set("Access-Control-Expose-Headers", "myData");
 
     // console.log("ctx. method", ctx.method)
     if (ctx.method === "OPTIONS")
@@ -57,8 +57,8 @@ app.use(async (ctx, next) => {
 const sequelize = new Sequelize({
     host: "127.0.0.1",
     username: "root",
-    password: "123456",
-    // password: "",
+    // password: "123456",
+    password: "",
     database: "g",
     dialect: 'mysql',
 });
@@ -236,14 +236,11 @@ router.post('/results', async (ctx, next) => {
 
 
 router.get('/winningRates', async (ctx, next) => {
-    const uid = ctx.query.uid
-
-    console.log("uid  ", uid)
+    const uid = ctx.query.uid ? ctx.query.uid : 2
 
     let res = await Team.findAll({ where: { uid } })
-    console.log("res", res)
 
-    let gameAttend = res.length
+    let gameAttend = res.length ? res.length : 0
 
     let winGames = 0, loseGames = 0, drawGames = 0
     for (const game of res) {
@@ -257,6 +254,9 @@ router.get('/winningRates', async (ctx, next) => {
             console.error(" error: ", uid, ":  ", game.result)
     }
 
+    let winningRate = gameAttend ? winGames / gameAttend : 0
+    let unDefeatedRate = gameAttend ? (winGames + drawGames) /gameAttend : 0
+
     ctx.body = {
         code: 200, data: {
             uid,
@@ -264,8 +264,8 @@ router.get('/winningRates', async (ctx, next) => {
             winGames,
             loseGames,
             drawGames,
-            winningRate: winGames / gameAttend
-
+            winningRate,
+            unDefeatedRate
         }
     }
     return next()
