@@ -16,7 +16,7 @@
 
 
 
-GET /users
+GET /users?name=lo
 
 ```json
 {
@@ -65,7 +65,7 @@ GET /users
 
 POST /users
 {
-    "name": "longlong"
+    "name": "longlong"  //名字 必填
 }
 
 {
@@ -74,9 +74,30 @@ POST /users
 }
 
 
+POST /results
+```json
+{
+    "round": 7,         //第几轮，必填
+    "date": "2022-1-12",//比赛日期
+    "captain1_uid": 2,  //队长1的id，必填
+    "captain2_uid": 3,  //队长2的uid，必填
+    "result": 3,        //1为captain1_uid赢，2为captain2_uid，3为平，必填
+    "score": "9:8",     //比分
+    "remark": "hhhhh",  //备注
+    "team1": [          //队伍1的 参赛人员，可以不包括队长，必填
+        4,
+        5
+    ],
+    "team2": [
+        6,
+        7
+    ]
+}
+```
 
 
-GET /results
+GET /results?round=1&date=2021-1-12&captain1_uid=2&
+    captain1_uid=1&remark=hh
 
 ```json
 {
@@ -112,26 +133,6 @@ GET /results
 
 
 
-POST /results
-```json
-{
-    "round": 7,         //第几轮
-    "date": "2022-1-12",//比赛日期
-    "captain1_uid": 2,  //队长1的id
-    "captain2_uid": 3,  //队长2的uid
-    "result": 3,        //1为captain1_uid赢，2为captain2_uid， 3为平
-    "score": "9:8",     //比分
-    "remark": "hhhhh",  //备注
-    "team1": [          //队伍1的 参赛人员，可以不包括队长
-        4,
-        5
-    ],
-    "team2": [
-        6,
-        7
-    ]
-}
-```
 
 
 GET /winningRates?uid=4

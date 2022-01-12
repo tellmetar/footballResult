@@ -4,8 +4,8 @@ const koaBody = require('koa-body');
 const json = require('koa-json')
 let Router = require('koa-better-router')
 let router = Router().loadMethods()
-const { DataTypes, Sequelize } = require("sequelize");
-const { accessLogger } = require('./logger/index')
+const { DataTypes, Sequelize, Op } = require("sequelize");
+const { accessLogger, logger } = require('./logger/index')
 
 app.use(async (ctx, next) => {
     // 允许来自所有域名请求
@@ -46,12 +46,10 @@ app.use(async (ctx, next) => {
     // getResponseHeader('myData')可以返回我们所需的值
     //https://www.rails365.net/articles/cors-jin-jie-expose-headers-wu
     ctx.set("Access-Control-Expose-Headers", "myData");
-    
-    console.log("ctx. method", ctx.method)
-    if (ctx.method = "OPTIONS")
-        ctx.status = 200
 
-    
+    // console.log("ctx. method", ctx.method)
+    if (ctx.method === "OPTIONS")
+        ctx.status = 200
     await next();
 })
 
@@ -59,7 +57,8 @@ app.use(async (ctx, next) => {
 const sequelize = new Sequelize({
     host: "127.0.0.1",
     username: "root",
-    password: "",
+    password: "123456",
+    // password: "",
     database: "g",
     dialect: 'mysql',
 });
@@ -77,9 +76,9 @@ const User = sequelize.define('User', {
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE
-  }, {
-      tableName: 'user'
-  });
+}, {
+    tableName: 'user'
+});
 
 const Result = sequelize.define('Result', {
     id: {
@@ -112,7 +111,7 @@ const Result = sequelize.define('Result', {
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE
-  }, {
+}, {
     tableName: 'result'
 });
 
@@ -138,7 +137,7 @@ const Team = sequelize.define('Team', {
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE
-  }, {
+}, {
     tableName: 'team'
 });
 
@@ -146,55 +145,67 @@ app.use(koaBody());
 app.use(json())
 app.use(accessLogger())
 
-
 router.get('/users', async (ctx, next) => {
-    ctx.body = { code: 200, data: await User.findAll()}
+    console.log("query", ctx.query)
+    let where = {}
+    if (ctx.query.name) {
+        where = { name: { [Op.substring]: ctx.query.name } }
+    }
+    ctx.body = { code: 200, data: await User.findAll({ where }) }
     return next()
 })
 
 router.post('/users', async (ctx, next) => {
     console.log("body", ctx.request.body)
     const body = ctx.request.body
-    let res = await User.findAll({where:{name: body.name}});
+    let res = await User.findAll({ where: { name: body.name } });
     if (res.length == 0) {
         res = await User.create(body);
-        ctx.body = { code: 200, data:`success`}
-    }
-    else
-        ctx.body = { code: 401, data:`dulicate`}
+        ctx.body = { code: 200, data: `success` }
+    } else
+        ctx.body = { code: 401, data: `dulicate` }
     return next()
 })
 
-
-router.get('/results', async(ctx, next) =>{
-    ctx.body = { code: 200, data:await Result.findAll()}
+router.get('/results', async (ctx, next) => {
+    console.log("query", ctx.query)
+    let where = {}
+    if (ctx.query.round)
+        where.round = ctx.query.round
+    if (ctx.query.date)
+        where.date = new Date(ctx.query.date)
+    if (ctx.query.captain1_uid)
+        where.captain1_uid = ctx.query.captain1_uid
+    if (ctx.query.captain2_uid)
+        where.captain1_uid = ctx.query.captain2_uid
+    if (ctx.query.remark)
+        where.remark = { [Op.substring]: ctx.query.remark }
+    ctx.body = { code: 200, data: await Result.findAll({ where }) }
     return next()
 })
 
 router.post('/results', async (ctx, next) => {
     console.log("body", ctx.request.body)
     const body = ctx.request.body
-    let res = await Result.findAll( {where:{round: body.round}})
+    let res = await Result.findAll({ where: { round: body.round } })
     if (res.length == 0) {
-        let resp = await Result.create(body)
-        // let id = await query(`select * from result where round = ${body.round}`)
-
         records = []
-        console.log("body.team1", body.team1)
-        console.log("body.team2", body.team2)
-        if (!body.team1 || body.team1.length === 0){
-            ctx.body = { code: 401, data:`team1 null`}
+        if (!body.team1 || body.team1.length === 0) {
+            ctx.body = { code: 401, data: `team1 null` }
         }
-        if (!body.team2 || body.team2.length === 0){
-            ctx.body = { code: 401, data:`team2 null`}
+        if (!body.team2 || body.team2.length === 0) {
+            ctx.body = { code: 401, data: `team2 null` }
         }
         if (body.team1.indexOf(body.captain1_uid) == -1)
             body.team1.push(body.captain1_uid)
-        if (body.team2.indexOf(body.captain2_uid)== -1)
+        if (body.team2.indexOf(body.captain2_uid) == -1)
             body.team2.push(body.captain2_uid)
 
         console.log("body.team1", body.team1)
         console.log("body.team2", body.team2)
+
+        let resp = await Result.create(body)
+
         //todo: captain1_uid 是否在team1中
         //todo: 第一sql插入成功后，第二局sql失败
         for (const user of body.team1) {
@@ -209,65 +220,64 @@ router.post('/results', async (ctx, next) => {
             records.push({
                 uid: user,
                 captain_uid: body.captain2_uid,
-                result: body.result != 3 ? (body.result ===1 ? 2:1) : 3,
+                result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
                 result_id: resp.getDataValue("id"),
             })
         }
 
         console.log("records ", records)
         await Team.bulkCreate(records)
-        ctx.body = { code: 200, data:`success`}
+        ctx.body = { code: 200, data: `success` }
     }
     else
-        ctx.body = { code: 401, data:`dulicate`}
+        ctx.body = { code: 401, data: `dulicate` }
     return next()
 })
 
 
-router.get('/winningRates', async(ctx, next) =>{
+router.get('/winningRates', async (ctx, next) => {
     const uid = ctx.query.uid
 
     console.log("uid  ", uid)
 
-    let res = await Team.findAll({where: {uid}})
+    let res = await Team.findAll({ where: { uid } })
     console.log("res", res)
 
     let gameAttend = res.length
 
-    let winGames  = 0, loseGames  = 0, drawGames = 0
-    for (const game of res){
+    let winGames = 0, loseGames = 0, drawGames = 0
+    for (const game of res) {
         if (game.result === 1)
-            winGames ++
+            winGames++
         else if (game.result === 2)
-            loseGames ++
+            loseGames++
         else if (game.result === 3)
-            drawGames ++
-        else 
+            drawGames++
+        else
             console.error(" error: ", uid, ":  ", game.result)
-    } 
+    }
 
-    ctx.body = { code: 200, data: {
-        uid,
-        gameAttend,
-        winGames,
-        loseGames,
-        drawGames,
-        winningRate: winGames/gameAttend
+    ctx.body = {
+        code: 200, data: {
+            uid,
+            gameAttend,
+            winGames,
+            loseGames,
+            drawGames,
+            winningRate: winGames / gameAttend
 
-    }}
+        }
+    }
     return next()
 })
 
-let api = Router({ prefix: '/api' })
-
-// add `router`'s routes to api router
-api.extend(router)
-
-
 app.use(router.middleware())
-app.use(api.middleware())
+
+app.on('error', (err, ctx) => {
+    logger.error('server error', err, ctx)
+})
 
 const port = 3000
 app.listen(port, () => {
     console.log(`server start, port ${port}`)
-  });
+});

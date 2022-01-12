@@ -17,13 +17,11 @@
   },
   "homepage": "https://github.com/tellmetar/footballResult#readme",
   "dependencies": {
-    "@koa/cors": "^3.1.0",
     "koa": "^2.13.4",
     "koa-better-router": "^2.1.1",
     "koa-body": "^4.2.0",
     "koa-json": "^2.0.2",
     "koa-log4": "^2.3.2",
-    "koa-orm": "^3.2.1",
     "mysql2": "^2.3.3",
     "pm2": "^5.1.2",
     "sequelize": "^6.13.0"
