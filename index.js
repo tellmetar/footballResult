@@ -1,10 +1,10 @@
-const Koa = require('koa');
-const app = new Koa();
-const koaBody = require('koa-body');
+const Koa = require('koa')
+const app = new Koa()
+const koaBody = require('koa-body')
 const json = require('koa-json')
-let Router = require('koa-better-router')
-let router = Router().loadMethods()
-const { DataTypes, Sequelize, Op } = require("sequelize");
+const Router = require("@koa/router")
+const router = new Router()
+const { DataTypes, Sequelize, Op } = require("sequelize")
 const { accessLogger, logger } = require('./logger/index')
 const serve = require("koa-static")
 
