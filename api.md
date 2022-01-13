@@ -145,7 +145,8 @@ GET /winningRates?uid=4
         "winGames": 3,      //获胜场次
         "loseGames": 1,     //失利场次
         "drawGames": 1,     //平局场次
-        "winningRate": 0.6  //胜率
+        "winningRate": 0.6, //胜率
+        "personalPoints": 1 //个人积分
     }
 }
 ```

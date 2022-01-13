@@ -235,6 +235,11 @@ router.post('/results', async (ctx, next) => {
 })
 
 
+/** 各位队友注意了，新赛季延用队长积分晋级制，同时引入个人积分。
+    个人积分规则如下：赢球队长6分，赢球队员3分，平球队长5分，平球队员2分，输球队长4分，输球队员1分。
+    积分制鼓励大家多出勤，对赛季末各奖项评选以及总决赛报名名额至关重要，希望大家多多参与，队委享有最终解释权。
+ */
+
 router.get('/winningRates', async (ctx, next) => {
     const uid = ctx.query.uid ? ctx.query.uid : 2
 
@@ -242,20 +247,31 @@ router.get('/winningRates', async (ctx, next) => {
 
     let gameAttend = res.length ? res.length : 0
 
-    let winGames = 0, loseGames = 0, drawGames = 0
+    let winGames = 0, loseGames = 0, drawGames = 0, personalPoints = 0
+
     for (const game of res) {
-        if (game.result === 1)
+        if (game.result === 1) {
             winGames++
-        else if (game.result === 2)
+            personalPoints += 3
+        }
+        else if (game.result === 2) {
             loseGames++
-        else if (game.result === 3)
+            personalPoints += 1
+        }
+        else if (game.result === 3) {
             drawGames++
+            personalPoints += 2
+        }
         else
             console.error(" error: ", uid, ":  ", game.result)
+
+        if (game.uid === game.captain_uid) {
+            personalPoints += 3
+        }
     }
 
     let winningRate = gameAttend ? winGames / gameAttend : 0
-    let unDefeatedRate = gameAttend ? (winGames + drawGames) /gameAttend : 0
+    let unDefeatedRate = gameAttend ? (winGames + drawGames) / gameAttend : 0
 
     ctx.body = {
         code: 200, data: {
@@ -265,7 +281,8 @@ router.get('/winningRates', async (ctx, next) => {
             loseGames,
             drawGames,
             winningRate,
-            unDefeatedRate
+            unDefeatedRate,
+            personalPoints
         }
     }
     return next()
