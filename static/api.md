@@ -132,9 +132,6 @@ GET /results?round=1&date=2021-1-12&captain1_uid=2&
 ```
 
 
-
-
-
 GET /winningRates?uid=4
 ```json
 {

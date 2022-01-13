@@ -6,6 +6,7 @@ let Router = require('koa-better-router')
 let router = Router().loadMethods()
 const { DataTypes, Sequelize, Op } = require("sequelize");
 const { accessLogger, logger } = require('./logger/index')
+const serve = require("koa-static")
 
 app.use(async (ctx, next) => {
     // 允许来自所有域名请求
@@ -17,7 +18,7 @@ app.use(async (ctx, next) => {
     ctx.set("Access-Control-Allow-Methods", "OPTIONS, GET, PUT, POST, DELETE");
 
     // 字段是必需的。它也是一个逗号分隔的字符串，表明服务器支持的所有头信息字段.
-    ctx.set("Access-Control-Allow-Headers", "x-requested-with, accept, origin, content-type");
+    ctx.set("Access-Control-Allow-Headers", "*");
 
     // 服务器收到请求以后，检查了Origin、Access-Control-Request-Method和Access-Control-Request-Headers字段以后，确认允许跨源请求，就可以做出回应。
 
@@ -144,6 +145,8 @@ const Team = sequelize.define('Team', {
 app.use(koaBody());
 app.use(json())
 app.use(accessLogger())
+
+router.get("/api.md", serve(__dirname + "/static"))
 
 router.get('/users', async (ctx, next) => {
     console.log("query", ctx.query)
