@@ -3,7 +3,9 @@ const app = new Koa()
 const koaBody = require('koa-body')
 const json = require('koa-json')
 const Router = require("@koa/router")
-const router = new Router()
+const router = new Router({
+    prefix: "/api_f"
+})
 const { DataTypes, Sequelize, Op } = require("sequelize")
 const { accessLogger, logger } = require('./logger/index')
 const serve = require("koa-static")
@@ -58,7 +60,7 @@ app.use(async (ctx, next) => {
 const sequelize = new Sequelize({
     host: "127.0.0.1",
     username: "root",
-    password: "123456",
+    password: "111111",
     // password: "",
     database: "g",
     dialect: 'mysql',
@@ -73,6 +75,10 @@ const User = sequelize.define('User', {
     },
     name: {
         type: DataTypes.STRING,
+        allowNull: false
+    },
+    number: {
+        type: DataTypes.NUMBER,
         allowNull: false
     },
     createdAt: DataTypes.DATE,
@@ -150,11 +156,17 @@ router.get("/api.md", serve(__dirname + "/static"))
 
 router.get('/users', async (ctx, next) => {
     console.log("query", ctx.query)
-    let where = {}
-    if (ctx.query.name) {
-        where = { name: { [Op.substring]: ctx.query.name } }
+    const size = ctx.query.size || 5
+    const page = ctx.query.page || 1
+    let where = {
     }
-    ctx.body = { code: 200, data: await User.findAll({ where }) }
+    if (ctx.query.name) {
+        where.name = { [Op.substring]: ctx.query.name } 
+    }
+    ctx.body = { code: 200, data: {
+        total: await User.count(),
+        userList: await User.findAll({ where, limit: parseInt(size), offset: parseInt((page-1) * size) })
+    } }
     return next()
 })
 
@@ -297,7 +309,7 @@ app.on('error', (err, ctx) => {
     logger.error('server error', err, ctx)
 })
 
-const port = 3000
+const port = 8888
 app.listen(port, () => {
     console.log(`server start, port ${port}`)
 });
