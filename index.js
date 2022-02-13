@@ -4,7 +4,7 @@ const koaBody = require('koa-body')
 const json = require('koa-json')
 const Router = require("@koa/router")
 const router = new Router({
-    prefix: "/api_f"
+    // prefix: "/api_f"
 })
 const { DataTypes, Sequelize, Op } = require("sequelize")
 const { accessLogger, logger } = require('./logger/index')
@@ -154,7 +154,7 @@ app.use(accessLogger())
 
 router.get("/api.md", serve(__dirname + "/static"))
 
-router.get('/users', async (ctx, next) => {
+router.get('/user', async (ctx, next) => {
     console.log("query", ctx.query)
     const size = ctx.query.size || 5
     const page = ctx.query.page || 1
@@ -163,26 +163,29 @@ router.get('/users', async (ctx, next) => {
     if (ctx.query.name) {
         where.name = { [Op.substring]: ctx.query.name } 
     }
+    if (ctx.query.number) {
+        where.number = { [Op.substring]: ctx.query.number } 
+    }
     ctx.body = { code: 200, data: {
-        total: await User.count(),
+        total: await User.count({where}),
         userList: await User.findAll({ where, limit: parseInt(size), offset: parseInt((page-1) * size) })
     } }
     return next()
 })
 
-router.post('/users', async (ctx, next) => {
+router.post('/user', async (ctx, next) => {
     console.log("body", ctx.request.body)
     const body = ctx.request.body
-    let res = await User.findAll({ where: { name: body.name } });
+    let res = await User.findAll({ where: {[Op.or]: [{ name: body.name },{ number: body.number }]} });
     if (res.length == 0) {
         res = await User.create(body);
         ctx.body = { code: 200, data: `success` }
     } else
-        ctx.body = { code: 401, data: `dulicate` }
+        ctx.body = { code: 401, data: `name or number dulicate` }
     return next()
 })
 
-router.get('/results', async (ctx, next) => {
+router.get('/result', async (ctx, next) => {
     console.log("query", ctx.query)
     let where = {}
     if (ctx.query.round)
@@ -199,7 +202,7 @@ router.get('/results', async (ctx, next) => {
     return next()
 })
 
-router.post('/results', async (ctx, next) => {
+router.post('/result', async (ctx, next) => {
     console.log("body", ctx.request.body)
     const body = ctx.request.body
     let res = await Result.findAll({ where: { round: body.round } })
@@ -245,7 +248,7 @@ router.post('/results', async (ctx, next) => {
         ctx.body = { code: 200, data: `success` }
     }
     else
-        ctx.body = { code: 401, data: `dulicate` }
+        ctx.body = { code: 401, data: `round dulicate` }
     return next()
 })
 
@@ -255,7 +258,7 @@ router.post('/results', async (ctx, next) => {
     积分制鼓励大家多出勤，对赛季末各奖项评选以及总决赛报名名额至关重要，希望大家多多参与，队委享有最终解释权。
  */
 
-router.get('/winningRates', async (ctx, next) => {
+router.get('/winningRate', async (ctx, next) => {
     const uid = ctx.query.uid ? ctx.query.uid : 2
 
     let res = await Team.findAll({ where: { uid } })
