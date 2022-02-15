@@ -61,7 +61,7 @@ app.use(async (ctx, next) => {
 const sequelize = new Sequelize({
     host: "127.0.0.1",
     username: "root",
-    password: "111111",
+    password: process.env.DB_PASS,
     // password: "",
     database: "g",
     dialect: 'mysql',
