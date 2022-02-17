@@ -134,6 +134,10 @@ const Team = sequelize.define('Team', {
         type: DataTypes.NUMBER,
         allowNull: false
     },
+    team:{
+        type: DataTypes.NUMBER,
+        allowNull: false
+    },
     captain_uid: {
         type: DataTypes.NUMBER,
     },
@@ -200,7 +204,17 @@ router.get('/result', async (ctx, next) => {
     if (ctx.query.remark)
         where.remark = { [Op.substring]: ctx.query.remark }
     ctx.body = { code: 200, data: await Result.findAll({ where }) }
-    return next()
+})
+
+router.get('/result/:id', async (ctx, next) => {
+    console.log("query =================", ctx.request.params.id, )
+    if (!ctx.request.params.id){
+        ctx.body = { code: 404, data: `id null` }
+        return next()
+    }
+    let result = await Result.findOne({where:{ id: ctx.request.params.id }})
+    let team = await Team.findAll({where:{ result_id: ctx.request.params.id}})
+    ctx.body = { code: 200, result, team }
 })
 
 router.post('/result', async (ctx, next) => {
@@ -209,48 +223,48 @@ router.post('/result', async (ctx, next) => {
     let res = await Result.findAll({ where: { round: body.round } })
     if (res.length == 0) {
         records = []
-        if (!body.team1 || body.team1.length === 0) {
-            ctx.body = { code: 401, data: `team1 null` }
-        }
-        if (!body.team2 || body.team2.length === 0) {
-            ctx.body = { code: 401, data: `team2 null` }
-        }
-        if (body.team1.indexOf(body.captain1_uid) == -1)
-            body.team1.push(body.captain1_uid)
-        if (body.team2.indexOf(body.captain2_uid) == -1)
-            body.team2.push(body.captain2_uid)
-
-        console.log("body.team1", body.team1)
-        console.log("body.team2", body.team2)
-
         let resp = await Result.create(body)
 
         //todo: captain1_uid 是否在team1中
         //todo: 第一sql插入成功后，第二局sql失败
-        for (const user of body.team1) {
-            records.push({
-                uid: user,
-                captain_uid: body.captain1_uid,
-                result: body.result,
-                result_id: resp.getDataValue("id"),
-            })
+        if (body.team1 && body.team1.length > 0 && body.team1.indexOf(body.captain1_uid) == -1){
+            body.team1.push(body.captain1_uid)
+            for (const user of body.team1) {
+                records.push({
+                    uid: user,
+                    team: 1,
+                    captain_uid: body.captain1_uid,
+                    result: body.result,
+                    result_id: resp.getDataValue("id"),
+                })
+            }
         }
-        for (const user of body.team2) {
-            records.push({
-                uid: user,
-                captain_uid: body.captain2_uid,
-                result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
-                result_id: resp.getDataValue("id"),
-            })
+        if (body.team2 && body.team2.length > 0 && body.team2.indexOf(body.captain2_uid) == -1){
+            body.team2.push(body.captain2_uid)
+            for (const user of body.team2) {
+                records.push({
+                    uid: user,
+                    team: 2,
+                    captain_uid: body.captain2_uid,
+                    result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
+                    result_id: resp.getDataValue("id"),
+                })
+            }
         }
 
         console.log("records ", records)
-        await Team.bulkCreate(records)
+        if (records.length >0){
+            await Team.bulkCreate(records)
+        }
         ctx.body = { code: 200, data: `success` }
     }
     else
         ctx.body = { code: 401, data: `round dulicate` }
-    return next()
+})
+
+router.put('/result', async (ctx, next) => {
+    const b = ctx.request.body
+    console.log("body", b)
 })
 
 
@@ -304,7 +318,6 @@ router.get('/winningRate', async (ctx, next) => {
             personalPoints
         }
     }
-    return next()
 })
 
 app.use(router.middleware())

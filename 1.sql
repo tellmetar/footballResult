@@ -21,7 +21,7 @@ USE `g`;
 CREATE TABLE IF NOT EXISTS `result` (
   `id` int NOT NULL AUTO_INCREMENT,
   `round` int NOT NULL DEFAULT '0' COMMENT '轮数',
-  `date` date NOT NULL,
+  `date` date DEFAULT NULL,
   `captain1_uid` int DEFAULT NULL,
   `captain2_uid` int DEFAULT NULL,
   `result` int DEFAULT NULL COMMENT '1为captain1_uid赢，2为captain2_uid， 3为平',
@@ -31,13 +31,18 @@ CREATE TABLE IF NOT EXISTS `result` (
   `updatedAt` date DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `round` (`round`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb3;
 
--- 正在导出表  g.result 的数据：~8 rows (大约)
+-- 正在导出表  g.result 的数据：~3 rows (大约)
 /*!40000 ALTER TABLE `result` DISABLE KEYS */;
 INSERT INTO `result` (`id`, `round`, `date`, `captain1_uid`, `captain2_uid`, `result`, `score`, `remark`, `createdAt`, `updatedAt`) VALUES
 	(22, 1, '2022-02-16', 7, 9, 1, '2:1', NULL, '2022-02-14', '2022-02-14'),
-	(23, 2, '2022-02-19', 12, 11, 1, '2:1', NULL, '2022-02-14', '2022-02-14');
+	(23, 2, '2022-02-19', 12, 11, 1, '2:1', NULL, '2022-02-14', '2022-02-14'),
+	(24, 13, '2022-02-02', 8, 9, 1, '1', NULL, '2022-02-15', '2022-02-15'),
+	(25, 3, '2022-02-15', 9, 7, 1, '1', NULL, '2022-02-17', '2022-02-17'),
+	(26, 56, '2022-02-02', 9, NULL, 1, NULL, NULL, '2022-02-17', '2022-02-17'),
+	(27, 32, '2022-02-04', NULL, NULL, 1, NULL, NULL, '2022-02-17', '2022-02-17'),
+	(28, 321, NULL, NULL, NULL, NULL, NULL, NULL, '2022-02-17', '2022-02-17');
 /*!40000 ALTER TABLE `result` ENABLE KEYS */;
 
 -- 导出  表 g.team 结构
@@ -45,29 +50,40 @@ CREATE TABLE IF NOT EXISTS `team` (
   `id` int NOT NULL AUTO_INCREMENT,
   `uid` int DEFAULT NULL,
   `captain_uid` int DEFAULT NULL,
+  `team` int DEFAULT NULL,
   `result` int DEFAULT NULL COMMENT '1为赢，2为输， 3为平',
   `result_id` int DEFAULT NULL,
   `createdAt` date DEFAULT NULL,
   `updatedAt` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb3;
 
--- 正在导出表  g.team 的数据：~32 rows (大约)
+-- 正在导出表  g.team 的数据：~17 rows (大约)
 /*!40000 ALTER TABLE `team` DISABLE KEYS */;
-INSERT INTO `team` (`id`, `uid`, `captain_uid`, `result`, `result_id`, `createdAt`, `updatedAt`) VALUES
-	(33, 2, 7, 1, 22, '2022-02-14', '2022-02-14'),
-	(34, 6, 7, 1, 22, '2022-02-14', '2022-02-14'),
-	(35, 7, 7, 1, 22, '2022-02-14', '2022-02-14'),
-	(36, 3, 9, 2, 22, '2022-02-14', '2022-02-14'),
-	(37, 4, 9, 2, 22, '2022-02-14', '2022-02-14'),
-	(38, 9, 9, 2, 22, '2022-02-14', '2022-02-14'),
-	(39, 5, 12, 1, 23, '2022-02-14', '2022-02-14'),
-	(40, 6, 12, 1, 23, '2022-02-14', '2022-02-14'),
-	(41, 12, 12, 1, 23, '2022-02-14', '2022-02-14'),
-	(42, 2, 11, 2, 23, '2022-02-14', '2022-02-14'),
-	(43, 3, 11, 2, 23, '2022-02-14', '2022-02-14'),
-	(44, 4, 11, 2, 23, '2022-02-14', '2022-02-14'),
-	(45, 11, 11, 2, 23, '2022-02-14', '2022-02-14');
+INSERT INTO `team` (`id`, `uid`, `captain_uid`, `team`, `result`, `result_id`, `createdAt`, `updatedAt`) VALUES
+	(33, 2, 7, 1, 1, 22, '2022-02-14', '2022-02-14'),
+	(34, 6, 7, 1, 1, 22, '2022-02-14', '2022-02-14'),
+	(35, 7, 7, 1, 1, 22, '2022-02-14', '2022-02-14'),
+	(36, 3, 9, 1, 2, 22, '2022-02-14', '2022-02-14'),
+	(37, 4, 9, 1, 2, 22, '2022-02-14', '2022-02-14'),
+	(38, 9, 9, 1, 2, 22, '2022-02-14', '2022-02-14'),
+	(39, 5, 12, 2, 1, 23, '2022-02-14', '2022-02-14'),
+	(40, 6, 12, 2, 1, 23, '2022-02-14', '2022-02-14'),
+	(41, 12, 12, 2, 1, 23, '2022-02-14', '2022-02-14'),
+	(42, 2, 11, 2, 2, 23, '2022-02-14', '2022-02-14'),
+	(43, 3, 11, 2, 2, 23, '2022-02-14', '2022-02-14'),
+	(44, 4, 11, 1, 2, 23, '2022-02-14', '2022-02-14'),
+	(45, 11, 11, 1, 2, 23, '2022-02-14', '2022-02-14'),
+	(46, 5, 8, 1, 1, 24, '2022-02-15', '2022-02-15'),
+	(47, 8, 8, 1, 1, 24, '2022-02-15', '2022-02-15'),
+	(48, 2, 9, 2, 2, 24, '2022-02-15', '2022-02-15'),
+	(49, 9, 9, 2, 2, 24, '2022-02-15', '2022-02-15'),
+	(50, 9, 9, 2, 1, 25, '2022-02-17', '2022-02-17'),
+	(51, 7, 7, 2, 2, 25, '2022-02-17', '2022-02-17'),
+	(52, 9, 9, 2, 1, 26, '2022-02-17', '2022-02-17'),
+	(53, NULL, NULL, NULL, 2, 26, '2022-02-17', '2022-02-17'),
+	(54, NULL, NULL, NULL, 1, 27, '2022-02-17', '2022-02-17'),
+	(55, NULL, NULL, NULL, 2, 27, '2022-02-17', '2022-02-17');
 /*!40000 ALTER TABLE `team` ENABLE KEYS */;
 
 -- 导出  表 g.user 结构
