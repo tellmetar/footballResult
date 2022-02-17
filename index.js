@@ -203,7 +203,8 @@ router.get('/result', async (ctx, next) => {
         where.captain1_uid = ctx.query.captain2_uid
     if (ctx.query.remark)
         where.remark = { [Op.substring]: ctx.query.remark }
-    ctx.body = { code: 200, data: await Result.findAll({ where }) }
+    const order = [['round', 'DESC']]
+    ctx.body = { code: 200, data: await Result.findAll({ where, order }) }
 })
 
 router.get('/result/:id', async (ctx, next) => {
