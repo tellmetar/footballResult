@@ -224,7 +224,7 @@ router.post('/result', async (ctx, next) => {
     let res = await Result.findAll({ where: { round: body.round } })
     if (res.length == 0) {
         records = []
-        let resp = await Result.create(body)
+        let resp = await Result.upsert(body)
 
         //todo: captain1_uid 是否在team1中
         //todo: 第一sql插入成功后，第二局sql失败
@@ -266,6 +266,12 @@ router.post('/result', async (ctx, next) => {
 router.put('/result', async (ctx, next) => {
     const b = ctx.request.body
     console.log("body", b)
+    let res = await Result.findOne({ where: { round: b.round } })
+    if (res) {
+        await Result.update({...b}, { where: {id: res.id}})
+    }
+    ctx.body = { code: 200, data: `success` }
+
 })
 
 
