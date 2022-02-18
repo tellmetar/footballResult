@@ -317,7 +317,7 @@ router.post('/result', async (ctx, next) => {
                     uid: user,
                     team: 2,
                     captain_uid: body.captain2_uid,
-                    result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
+                    result: body.result != "3" ? (body.result == "1" ? 2 : 1) : 3,
                     result_id,
                 })
             }
@@ -391,7 +391,7 @@ router.put('/result', async (ctx, next) => {
                     uid: user,
                     team: 2,
                     captain_uid: body.captain2_uid,
-                    result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
+                    result: body.result != "3" ? (body.result == "1" ? 2 : 1) : 3,
                     result_id,
                 })
             }
