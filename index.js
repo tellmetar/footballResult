@@ -111,8 +111,11 @@ const Result = sequelize.define('Result', {
     result: {
         type: DataTypes.NUMBER,
     },
-    score: {
-        type: DataTypes.STRING,
+    score1: {
+        type: DataTypes.NUMBER,
+    },
+    score2: {
+        type: DataTypes.NUMBER,
     },
     remark: {
         type: DataTypes.STRING,
@@ -121,6 +124,58 @@ const Result = sequelize.define('Result', {
     updatedAt: DataTypes.DATE
 }, {
     tableName: 'result'
+});
+
+const Score = sequelize.define('Score', {
+    id: {
+        primaryKey: true,
+        autoIncrement: true,
+        type: DataTypes.NUMBER,
+        remark: "id"
+    },
+    uid: {
+        type: DataTypes.NUMBER,
+        allowNull: false
+    },
+    score: {
+        type: DataTypes.NUMBER,
+    },
+    result_id: {
+        type: DataTypes.NUMBER,
+    },
+    round:{
+        type: DataTypes.NUMBER,
+    },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE
+}, {
+    tableName: 'score'
+});
+
+const Assist = sequelize.define('Assist', {
+    id: {
+        primaryKey: true,
+        autoIncrement: true,
+        type: DataTypes.NUMBER,
+        remark: "id"
+    },
+    uid: {
+        type: DataTypes.NUMBER,
+        allowNull: false
+    },
+    assist: {
+        type: DataTypes.NUMBER,
+    },
+    result_id: {
+        type: DataTypes.NUMBER,
+    },
+    round:{
+        type: DataTypes.NUMBER,
+    },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE
+}, {
+    tableName: 'assist'
 });
 
 const Team = sequelize.define('Team', {
@@ -134,7 +189,7 @@ const Team = sequelize.define('Team', {
         type: DataTypes.NUMBER,
         allowNull: false
     },
-    team:{
+    team: {
         type: DataTypes.NUMBER,
         allowNull: false
     },
@@ -166,22 +221,24 @@ router.get('/user', async (ctx, next) => {
     let where = {
     }
     if (ctx.query.name) {
-        where.name = { [Op.substring]: ctx.query.name } 
+        where.name = { [Op.substring]: ctx.query.name }
     }
     if (ctx.query.number) {
-        where.number = { [Op.substring]: ctx.query.number } 
+        where.number = { [Op.substring]: ctx.query.number }
     }
-    ctx.body = { code: 200, data: {
-        total: await User.count({where}),
-        userList: await User.findAll({ where, limit: parseInt(size), offset: parseInt((page-1) * size) })
-    } }
+    ctx.body = {
+        code: 200, data: {
+            total: await User.count({ where }),
+            userList: await User.findAll({ where, limit: parseInt(size), offset: parseInt((page - 1) * size) })
+        }
+    }
     return next()
 })
 
 router.post('/user', async (ctx, next) => {
     console.log("body", ctx.request.body)
     const body = ctx.request.body
-    let res = await User.findAll({ where: {[Op.or]: [{ name: body.name },{ number: body.number }]} });
+    let res = await User.findAll({ where: { [Op.or]: [{ name: body.name }, { number: body.number }] } });
     if (res.length == 0) {
         res = await User.create(body);
         ctx.body = { code: 200, data: `success` }
@@ -204,31 +261,41 @@ router.get('/result', async (ctx, next) => {
     if (ctx.query.remark)
         where.remark = { [Op.substring]: ctx.query.remark }
     const order = [['round', 'DESC']]
-    ctx.body = { code: 200, data: await Result.findAll({ where, order }) }
+    ctx.body = {
+        code: 200, data: {
+            total: await Result.count({ where, order }),
+            list: await Result.findAll({ where, order })
+        }
+    }
 })
 
 router.get('/result/:id', async (ctx, next) => {
-    console.log("query =================", ctx.request.params.id, )
-    if (!ctx.request.params.id){
+    console.log("query =================", ctx.request.params.id,)
+    if (!ctx.request.params.id) {
         ctx.body = { code: 404, data: `id null` }
         return next()
     }
-    let result = await Result.findOne({where:{ id: ctx.request.params.id }})
-    let team = await Team.findAll({where:{ result_id: ctx.request.params.id}})
-    ctx.body = { code: 200, result, team }
+    const id = ctx.request.params.id
+    let result = await Result.findOne({ where: { id } })
+    let team = await Team.findAll({ where: { result_id: id } })
+    let scoreList = await Score.findAll({ where: { result_id: id } })
+    let assistList = await Assist.findAll({ where: { result_id: id } })
+    ctx.body = { code: 200, result, team, scoreList, assistList }
 })
 
 router.post('/result', async (ctx, next) => {
     console.log("body", ctx.request.body)
     const body = ctx.request.body
-    let res = await Result.findAll({ where: { round: body.round } })
+    const round = body.round
+    let res = await Result.findAll({ where: { round } })
     if (res.length == 0) {
-        let resp = await Result.upsert(body)
-        
+        let resp = await Result.create(body)
+        const result_id = resp.id
+
         //todo: 第一sql插入成功后，第二局sql失败
-        records = []
-        if (body.team1 && body.team1.length > 0){
-            if (body.team1.indexOf(body.captain1_uid) == -1){
+        let records = []
+        if (body.team1 && body.team1.length > 0) {
+            if (body.team1.indexOf(body.captain1_uid) == -1) {
                 body.team1.push(body.captain1_uid)
             }
             for (const user of body.team1) {
@@ -237,11 +304,11 @@ router.post('/result', async (ctx, next) => {
                     team: 1,
                     captain_uid: body.captain1_uid,
                     result: body.result,
-                    result_id: resp.getDataValue("id"),
+                    result_id,
                 })
             }
         }
-        if (body.team2 && body.team2.length > 0){
+        if (body.team2 && body.team2.length > 0) {
             if (body.team2.indexOf(body.captain2_uid) == -1) {
                 body.team2.push(body.captain2_uid)
             }
@@ -251,13 +318,35 @@ router.post('/result', async (ctx, next) => {
                     team: 2,
                     captain_uid: body.captain2_uid,
                     result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
-                    result_id: resp.getDataValue("id"),
+                    result_id,
                 })
             }
         }
         console.log("records ", records)
-        if (records.length >0){
+        if (records.length > 0) {
             await Team.bulkCreate(records)
+        }
+
+        let scoreRecords =[]
+        if (body.scoreList && body.scoreList.length > 0){
+            for (let r of body.scoreList){
+                scoreRecords.push({ result_id,round, ...r})
+            }
+            console.log("body.scoreList", scoreRecords)
+            if (scoreRecords.length >0){
+                await Score.bulkCreate(scoreRecords)
+            }
+        }
+
+        let assistRecords =[]
+        if (body.assistList && body.assistList.length > 0){
+            for (let r of body.assistList){
+                assistRecords.push({ result_id,round, ...r})
+            }
+            console.log("body.scoreList", assistRecords)
+            if (assistRecords.length >0){
+                await Assist.bulkCreate(assistRecords)
+            }
         }
 
         ctx.body = { code: 200, data: `success` }
@@ -271,14 +360,16 @@ router.put('/result', async (ctx, next) => {
     console.log("body", body)
     let res = await Result.findOne({ where: { round: body.round } })
     if (res) {
-        await Result.update({...body}, { where: {id: res.id}})
+        const result_id = res.id
+        const round = res.round
+        await Result.update({ ...body }, { where: { id: res.id } })
         //todo: 直接删除team表数据。然后 新增数据。。。 这里不用考虑 新增0条数据的情况，因为这种场景 是合理的
-        let records = await Team.destroy({where: {result_id: res.id}})
+        let records = await Team.destroy({ where: { result_id } })
         console.log("records------------------------", records)
 
         records = []
-        if (body.team1 && body.team1.length > 0){
-            if (body.captain1_uid && body.team1.indexOf(body.captain1_uid) == -1){
+        if (body.team1 && body.team1.length > 0) {
+            if (body.captain1_uid && body.team1.indexOf(body.captain1_uid) == -1) {
                 body.team1.push(body.captain1_uid)
             }
             for (const user of body.team1) {
@@ -291,7 +382,7 @@ router.put('/result', async (ctx, next) => {
                 })
             }
         }
-        if (body.team2 && body.team2.length > 0){
+        if (body.team2 && body.team2.length > 0) {
             if (body.captain2_uid && body.team2.indexOf(body.captain2_uid) == -1) {
                 body.team2.push(body.captain2_uid)
             }
@@ -301,15 +392,39 @@ router.put('/result', async (ctx, next) => {
                     team: 2,
                     captain_uid: body.captain2_uid,
                     result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
-                    result_id: res.id,
+                    result_id,
                 })
             }
         }
         console.log("records ", records)
-        if (records.length > 0){
+        if (records.length > 0) {
             await Team.bulkCreate(records)
         }
-  
+
+
+        await Score.destroy({ where: { result_id } })
+        let scoreRecords =[]
+        if (body.scoreList && body.scoreList.length > 0){
+            for (let r of body.scoreList){
+                scoreRecords.push({ result_id, round, ...r})
+            }
+            console.log("body.scoreList", scoreRecords)
+            if (scoreRecords.length >0){
+                await Score.bulkCreate(scoreRecords)
+            }
+        }
+
+        await Assist.destroy({ where: { result_id } })
+        let assistRecords =[]
+        if (body.assistList && body.assistList.length > 0){
+            for (let r of body.assistList){
+                assistRecords.push({ result_id,round, ...r})
+            }
+            console.log("body.scoreList", assistRecords)
+            if (assistRecords.length >0){
+                await Assist.bulkCreate(assistRecords)
+            }
+        }
 
     }
     ctx.body = { code: 200, data: `success` }
