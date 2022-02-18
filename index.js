@@ -223,13 +223,14 @@ router.post('/result', async (ctx, next) => {
     const body = ctx.request.body
     let res = await Result.findAll({ where: { round: body.round } })
     if (res.length == 0) {
-        records = []
         let resp = await Result.upsert(body)
-
-        //todo: captain1_uid 是否在team1中
+        
         //todo: 第一sql插入成功后，第二局sql失败
-        if (body.team1 && body.team1.length > 0 && body.team1.indexOf(body.captain1_uid) == -1){
-            body.team1.push(body.captain1_uid)
+        records = []
+        if (body.team1 && body.team1.length > 0){
+            if (body.team1.indexOf(body.captain1_uid) == -1){
+                body.team1.push(body.captain1_uid)
+            }
             for (const user of body.team1) {
                 records.push({
                     uid: user,
@@ -240,8 +241,10 @@ router.post('/result', async (ctx, next) => {
                 })
             }
         }
-        if (body.team2 && body.team2.length > 0 && body.team2.indexOf(body.captain2_uid) == -1){
-            body.team2.push(body.captain2_uid)
+        if (body.team2 && body.team2.length > 0){
+            if (body.team2.indexOf(body.captain2_uid) == -1) {
+                body.team2.push(body.captain2_uid)
+            }
             for (const user of body.team2) {
                 records.push({
                     uid: user,
@@ -252,11 +255,11 @@ router.post('/result', async (ctx, next) => {
                 })
             }
         }
-
         console.log("records ", records)
         if (records.length >0){
             await Team.bulkCreate(records)
         }
+
         ctx.body = { code: 200, data: `success` }
     }
     else
@@ -264,11 +267,50 @@ router.post('/result', async (ctx, next) => {
 })
 
 router.put('/result', async (ctx, next) => {
-    const b = ctx.request.body
-    console.log("body", b)
-    let res = await Result.findOne({ where: { round: b.round } })
+    const body = ctx.request.body
+    console.log("body", body)
+    let res = await Result.findOne({ where: { round: body.round } })
     if (res) {
-        await Result.update({...b}, { where: {id: res.id}})
+        await Result.update({...body}, { where: {id: res.id}})
+        //todo: 直接删除team表数据。然后 新增数据。。。 这里不用考虑 新增0条数据的情况，因为这种场景 是合理的
+        let records = await Team.destroy({where: {result_id: res.id}})
+        console.log("records------------------------", records)
+
+        records = []
+        if (body.team1 && body.team1.length > 0){
+            if (body.captain1_uid && body.team1.indexOf(body.captain1_uid) == -1){
+                body.team1.push(body.captain1_uid)
+            }
+            for (const user of body.team1) {
+                records.push({
+                    uid: user,
+                    team: 1,
+                    captain_uid: body.captain1_uid,
+                    result: body.result,
+                    result_id: res.id,
+                })
+            }
+        }
+        if (body.team2 && body.team2.length > 0){
+            if (body.captain2_uid && body.team2.indexOf(body.captain2_uid) == -1) {
+                body.team2.push(body.captain2_uid)
+            }
+            for (const user of body.team2) {
+                records.push({
+                    uid: user,
+                    team: 2,
+                    captain_uid: body.captain2_uid,
+                    result: body.result != 3 ? (body.result === 1 ? 2 : 1) : 3,
+                    result_id: res.id,
+                })
+            }
+        }
+        console.log("records ", records)
+        if (records.length > 0){
+            await Team.bulkCreate(records)
+        }
+  
+
     }
     ctx.body = { code: 200, data: `success` }
 
