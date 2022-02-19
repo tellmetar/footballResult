@@ -306,7 +306,7 @@ router.post('/result', async (ctx, next) => {
         //todo: 第一sql插入成功后，第二局sql失败
         let records = []
         if (body.team1 && body.team1.length > 0) {
-            if (body.team1.indexOf(body.captain1_uid) == -1) {
+            if (body.captain1_uid && body.team1.indexOf(body.captain1_uid + "") == -1) {
                 body.team1.push(body.captain1_uid)
             }
             for (const user of body.team1) {
@@ -320,7 +320,7 @@ router.post('/result', async (ctx, next) => {
             }
         }
         if (body.team2 && body.team2.length > 0) {
-            if (body.team2.indexOf(body.captain2_uid) == -1) {
+            if (body.captain2_uid && body.team2.indexOf(body.captain2_uid + "") == -1) {
                 body.team2.push(body.captain2_uid)
             }
             for (const user of body.team2) {
