@@ -74,14 +74,22 @@ const User = sequelize.define('User', {
         type: DataTypes.NUMBER,
         remark: "id"
     },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    number: {
-        type: DataTypes.NUMBER,
-        allowNull: false
-    },
+    name: { type: DataTypes.STRING },
+    number: { type: DataTypes.NUMBER },
+    gameAttend: { type: DataTypes.NUMBER },
+    winGames: { type: DataTypes.NUMBER },
+    loseGames: { type: DataTypes.NUMBER },
+    drawGames: { type: DataTypes.NUMBER },
+    winningRate: { type: DataTypes.FLOAT },
+    unDefeatedRate: { type: DataTypes.FLOAT },
+    personalPoints: { type: DataTypes.NUMBER },
+
+    score: { type: DataTypes.NUMBER },
+    assist: { type: DataTypes.NUMBER },
+    yellow: { type: DataTypes.NUMBER },
+    red: { type: DataTypes.NUMBER },
+    red: { type: DataTypes.NUMBER },
+
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE
 }, {
@@ -143,7 +151,7 @@ const Score = sequelize.define('Score', {
     result_id: {
         type: DataTypes.NUMBER,
     },
-    round:{
+    round: {
         type: DataTypes.NUMBER,
     },
     createdAt: DataTypes.DATE,
@@ -169,7 +177,7 @@ const Assist = sequelize.define('Assist', {
     result_id: {
         type: DataTypes.NUMBER,
     },
-    round:{
+    round: {
         type: DataTypes.NUMBER,
     },
     createdAt: DataTypes.DATE,
@@ -212,6 +220,8 @@ app.use(koaBody());
 app.use(json())
 app.use(accessLogger())
 
+global.lock = false
+
 router.get("/api.md", serve(__dirname + "/static"))
 
 router.get('/user', async (ctx, next) => {
@@ -226,10 +236,11 @@ router.get('/user', async (ctx, next) => {
     if (ctx.query.number) {
         where.number = { [Op.substring]: ctx.query.number }
     }
+    const order = [['winningRate', 'DESC'], ['gameAttend', 'DESC']]
     ctx.body = {
         code: 200, data: {
             total: await User.count({ where }),
-            userList: await User.findAll({ where, limit: parseInt(size), offset: parseInt((page - 1) * size) })
+            userList: await User.findAll({ where, order, limit: parseInt(size), offset: parseInt((page - 1) * size) })
         }
     }
     return next()
@@ -327,24 +338,24 @@ router.post('/result', async (ctx, next) => {
             await Team.bulkCreate(records)
         }
 
-        let scoreRecords =[]
-        if (body.scoreList && body.scoreList.length > 0){
-            for (let r of body.scoreList){
-                scoreRecords.push({ result_id,round, ...r})
+        let scoreRecords = []
+        if (body.scoreList && body.scoreList.length > 0) {
+            for (let r of body.scoreList) {
+                scoreRecords.push({ result_id, round, ...r })
             }
             console.log("body.scoreList", scoreRecords)
-            if (scoreRecords.length >0){
+            if (scoreRecords.length > 0) {
                 await Score.bulkCreate(scoreRecords)
             }
         }
 
-        let assistRecords =[]
-        if (body.assistList && body.assistList.length > 0){
-            for (let r of body.assistList){
-                assistRecords.push({ result_id,round, ...r})
+        let assistRecords = []
+        if (body.assistList && body.assistList.length > 0) {
+            for (let r of body.assistList) {
+                assistRecords.push({ result_id, round, ...r })
             }
             console.log("body.scoreList", assistRecords)
-            if (assistRecords.length >0){
+            if (assistRecords.length > 0) {
                 await Assist.bulkCreate(assistRecords)
             }
         }
@@ -369,7 +380,7 @@ router.put('/result', async (ctx, next) => {
 
         records = []
         if (body.team1 && body.team1.length > 0) {
-            if (body.captain1_uid && body.team1.indexOf(body.captain1_uid +"") == -1) {
+            if (body.captain1_uid && body.team1.indexOf(body.captain1_uid + "") == -1) {
                 body.team1.push(body.captain1_uid)
             }
             for (const user of body.team1) {
@@ -383,7 +394,7 @@ router.put('/result', async (ctx, next) => {
             }
         }
         if (body.team2 && body.team2.length > 0) {
-            if (body.captain2_uid && body.team2.indexOf(body.captain2_uid +"") == -1) {
+            if (body.captain2_uid && body.team2.indexOf(body.captain2_uid + "") == -1) {
                 body.team2.push(body.captain2_uid)
             }
             for (const user of body.team2) {
@@ -403,25 +414,25 @@ router.put('/result', async (ctx, next) => {
 
 
         await Score.destroy({ where: { result_id } })
-        let scoreRecords =[]
-        if (body.scoreList && body.scoreList.length > 0){
-            for (let r of body.scoreList){
-                scoreRecords.push({ result_id, round, ...r})
+        let scoreRecords = []
+        if (body.scoreList && body.scoreList.length > 0) {
+            for (let r of body.scoreList) {
+                scoreRecords.push({ result_id, round, ...r })
             }
             console.log("body.scoreList", scoreRecords)
-            if (scoreRecords.length >0){
+            if (scoreRecords.length > 0) {
                 await Score.bulkCreate(scoreRecords)
             }
         }
 
         await Assist.destroy({ where: { result_id } })
-        let assistRecords =[]
-        if (body.assistList && body.assistList.length > 0){
-            for (let r of body.assistList){
-                assistRecords.push({ result_id,round, ...r})
+        let assistRecords = []
+        if (body.assistList && body.assistList.length > 0) {
+            for (let r of body.assistList) {
+                assistRecords.push({ result_id, round, ...r })
             }
             console.log("body.scoreList", assistRecords)
-            if (assistRecords.length >0){
+            if (assistRecords.length > 0) {
                 await Assist.bulkCreate(assistRecords)
             }
         }
@@ -438,49 +449,93 @@ router.put('/result', async (ctx, next) => {
  */
 
 router.get('/winningRate', async (ctx, next) => {
-    const uid = ctx.query.uid ? ctx.query.uid : 2
 
-    let res = await Team.findAll({ where: { uid } })
+    console.log("global.lock", global.lock)
 
-    let gameAttend = res.length ? res.length : 0
+    if (!global.lock) {
+        global.lock = true
+        console.log("global.lock", global.lock)
+        const startTime = new Date()
+        logger.info("start stat", startTime.toLocaleString())
+        const users = await User.findAll()
 
-    let winGames = 0, loseGames = 0, drawGames = 0, personalPoints = 0
+        try {
+            for (let user of users) {
+                const uid = user.id
 
-    for (const game of res) {
-        if (game.result === 1) {
-            winGames++
-            personalPoints += 3
+                let res = await Team.findAll({ where: { uid } })
+
+                if (res.length > 0) {
+
+                    let gameAttend = res.length ? res.length : 0
+
+                    let winGames = 0, loseGames = 0, drawGames = 0, personalPoints = 0
+
+                    for (const game of res) {
+                        if (game.result === 1) {
+                            winGames++
+                            personalPoints += 3
+                        }
+                        else if (game.result === 2) {
+                            loseGames++
+                            personalPoints += 1
+                        }
+                        else if (game.result === 3) {
+                            drawGames++
+                            personalPoints += 2
+                        }
+                        else
+                            console.error(" error: ", uid, ":  ", game.result)
+
+                        if (game.uid === game.captain_uid) {
+                            personalPoints += 3
+                        }
+                    }
+
+                    let winningRate = gameAttend ? winGames / gameAttend : 0
+                    let unDefeatedRate = gameAttend ? (winGames + drawGames) / gameAttend : 0
+
+                    let scoreList = await Score.findAll({ where: { uid } })
+                    let score = 0
+                    for (const s of scoreList){
+                        score += s.score
+                    }
+
+                    let assistList = await Assist.findAll({ where: { uid } })
+                    let assist = 0
+                    for (const s of assistList){
+                        assist += s.assist
+                    }
+
+
+                    await User.update({
+                        ...user, gameAttend, winGames,
+                        loseGames,
+                        drawGames,
+                        winningRate,
+                        unDefeatedRate,
+                        personalPoints,
+                        score,
+                        assist
+                    }, { where: { id: user.id } })
+                }
+            }
+        } catch (e) {
+            console.log("global.lock", global.lock)
+            global.lock = false
         }
-        else if (game.result === 2) {
-            loseGames++
-            personalPoints += 1
-        }
-        else if (game.result === 3) {
-            drawGames++
-            personalPoints += 2
-        }
-        else
-            console.error(" error: ", uid, ":  ", game.result)
 
-        if (game.uid === game.captain_uid) {
-            personalPoints += 3
-        }
+        const endTime = new Date()
+        logger.info("end stat", endTime.toLocaleString())
+        logger.info("stat comsumption", endTime.getMilliseconds() - startTime.getMilliseconds)
+        global.lock = false
+        console.log("global.lock", global.lock)
+        ctx.body = { code: 200, data: "process data" }
+        return next()
     }
 
-    let winningRate = gameAttend ? winGames / gameAttend : 0
-    let unDefeatedRate = gameAttend ? (winGames + drawGames) / gameAttend : 0
-
     ctx.body = {
-        code: 200, data: {
-            uid,
-            gameAttend,
-            winGames,
-            loseGames,
-            drawGames,
-            winningRate,
-            unDefeatedRate,
-            personalPoints
-        }
+        code: 200, data: "not process data"
     }
 })
 

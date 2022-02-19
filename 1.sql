@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS `team` (
   `createdAt` date DEFAULT NULL,
   `updatedAt` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=90 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb3;
 
 -- 数据导出被取消选择。
 
@@ -84,10 +84,21 @@ CREATE TABLE IF NOT EXISTS `user` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(50) DEFAULT NULL,
   `number` int DEFAULT NULL,
+  `gameAttend` int DEFAULT NULL,
+  `winGames` int DEFAULT NULL,
+  `loseGames` int DEFAULT NULL,
+  `drawGames` int DEFAULT NULL,
+  `winningRate` float DEFAULT NULL,
+  `unDefeatedRate` float DEFAULT NULL,
+  `personalPoints` int DEFAULT NULL,
+  `score` int DEFAULT NULL,
+  `assist` int DEFAULT NULL,
+  `yellow` int DEFAULT NULL,
+  `red` int DEFAULT NULL,
   `createdAt` date DEFAULT NULL,
   `updatedAt` date DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb3;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb3;
 
 -- 数据导出被取消选择。
 
